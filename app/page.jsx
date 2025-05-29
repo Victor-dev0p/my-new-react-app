@@ -1,52 +1,61 @@
-"use client";
-import { useState } from "react";
+'use client';
 
-const Page = () => {
+import { useState } from 'react';
+
+const UploadVideo = () => {
   const [file, setFile] = useState(null);
-  const [imageUrl, setImageUrl] = useState("");
+  const [title, setTitle] = useState('');
+  const [message, setMessage] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!file) return alert("Please select a file");
+    setMessage('');
+
+    if (!file || !title) {
+      return setMessage('Please provide a video and title.');
+    }
 
     const formData = new FormData();
-    formData.append("image", file);
+    formData.append('video', file);
+    formData.append('title', title);
 
-    const res = await fetch("/api/upload", {
-      method: "POST",
-      body: formData,
-    });
+    try {
+      const res = await fetch('/api/uploadVideo', {
+        method: 'POST',
+        body: formData,
+      });
 
-    // const result = await res.json();
-    // if (!res.ok) {
-    //  console.error("Upload failed:", result.error);
-    // } else {
-    //   console.log("Uploaded:", result.data);
-    // }
-
-    const data = await res.json();
-    if (data.success) {
-      setImageUrl(data.data);
-    } else {
-      alert("Upload failed");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
+      setMessage(data.message || 'Upload complete');
+    } catch (err) {
+      setMessage(`Upload failed: ${err.message}`);
     }
   };
 
   return (
-    <main className="p-6">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input type="file" onChange={(e) => setFile(e.target.files[0])} />
-        <button type="submit" className="bg-blue-500 text-white p-2">Upload</button>
-      </form>
-
-      {imageUrl && (
-        <div className="mt-4">
-          <h3>Uploaded Image:</h3>
-          <img src={imageUrl} alt="Uploaded" className="w-64 h-auto mt-2" />
-        </div>
-      )}
-    </main>
+    <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto mt-10">
+      <input
+        type="file"
+        accept="video/mp4"
+        onChange={(e) => setFile(e.target.files[0])}
+        required
+        className="block"
+      />
+      <input
+        type="text"
+        placeholder="Video title"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        required
+        className="block border p-2 w-full"
+      />
+      <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded cursor-pointer">
+        Upload to MongoDB
+      </button>
+      {message && <p className="text-sm mt-2">{message}</p>}
+    </form>
   );
 };
 
-export default Page;
+export default UploadVideo;
